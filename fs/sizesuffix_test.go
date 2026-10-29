@@ -143,6 +143,30 @@ func TestSizeSuffixSet(t *testing.T) {
 	}
 }
 
+func TestSizeSuffixStringRoundTrip(t *testing.T) {
+	for _, test := range []struct {
+		in   SizeSuffix
+		want string
+	}{
+		{-1, "off"},
+		{0, "0"},
+		{102, "102B"},
+		{1024, "1Ki"},
+		{1046, "1046B"},
+		{1536, "1.500Ki"},
+		{10 * Mebi, "10Mi"},
+		{1<<60 + 1, "1152921504606846977B"},
+		{123456789012345678, "123456789012345678B"},
+		{SizeSuffixMaxValue, "9223372036854775807B"},
+	} {
+		got := test.in.stringRoundTrip()
+		assert.Equal(t, test.want, got, int64(test.in))
+		var back SizeSuffix
+		require.NoError(t, back.Set(got), got)
+		assert.Equal(t, test.in, back, got)
+	}
+}
+
 func TestSizeSuffixScan(t *testing.T) {
 	var v SizeSuffix
 	n, err := fmt.Sscan(" 17M ", &v)

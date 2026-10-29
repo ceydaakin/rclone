@@ -86,6 +86,11 @@ func (x SizeSuffix) stringRoundTrip() string {
 			str += "B"
 		}
 	}
+	// String rounds to 3 decimal places so fall back to the exact byte count
+	var y SizeSuffix
+	if x >= 0 && (y.Set(str) != nil || y != x) {
+		str = strconv.FormatInt(int64(x), 10) + "B"
+	}
 	return str
 }
 
@@ -186,6 +191,13 @@ func (x *SizeSuffix) Set(s string) error {
 		}
 	}
 	s = s[:len(s)-suffixLen]
+	// float64 can't hold every int64 so parse whole byte counts exactly
+	if multiplier == float64(SizeSuffixBase) {
+		if n, err := strconv.ParseInt(s, 10, 64); err == nil && n >= 0 {
+			*x = SizeSuffix(n)
+			return nil
+		}
+	}
 	value, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return err
