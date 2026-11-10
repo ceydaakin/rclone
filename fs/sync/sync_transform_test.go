@@ -528,3 +528,21 @@ func TestError(t *testing.T) {
 	r.CheckLocalListing(t, []fstest.Item{file1}, []string{"toe", "toe/toe"})
 	r.CheckRemoteListing(t, []fstest.Item{file1}, []string{"toe", "toe/toe"})
 }
+
+func TestTransformNoTraverseIgnoreExisting(t *testing.T) {
+	ctx := context.Background()
+	ctx, ci := fs.AddConfig(ctx)
+	r := newTransformRun(t)
+	err := transform.SetOptions(ctx, "all,prefix=mapped-")
+	require.NoError(t, err)
+	ci.NoTraverse = true
+	ci.IgnoreExisting = true
+	file1 := r.WriteFile("dir/file.txt", "new content", t2)
+	file2 := r.WriteObject(ctx, "mapped-dir/mapped-file.txt", "original", t1)
+
+	err = CopyDir(ctx, r.Fremote, r.Flocal, false)
+	require.NoError(t, err)
+
+	r.CheckLocalItems(t, file1)
+	r.CheckRemoteItems(t, file2)
+}

@@ -491,7 +491,10 @@ func (m *March) processJob(job listDirJob) ([]listDirJob, error) {
 						t.dstMatch <- nil
 						continue
 					}
-					dst, err := m.Fdst.NewObject(m.Ctx, path.Join(job.dstRemote, leaf))
+					// job.dstRemote is untransformed since directories
+					// are never matched here, so transform the whole path
+					remote := transform.Path(m.Ctx, path.Join(job.dstRemote, leaf), false)
+					dst, err := m.Fdst.NewObject(m.Ctx, remote)
 					m.newObjectSem.Release(1)
 					if err != nil {
 						dst = nil
